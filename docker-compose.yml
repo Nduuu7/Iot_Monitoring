@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # MQTT Broker (EMQX)
+  emqx:
+    image: emqx/emqx:latest
+    container_name: emqx
+    restart: always
+    ports:
+      - "1883:1883"     # MQTT Port
+      - "18083:18083"   # Dashboard Port (admin:public)
+      - "8083:8083"     # WebSocket Port
+      - "8883:8883"     # SSL Port
+    networks:
+      - iot_network
+
+  # Database MySQL
+  iot-mysql:
+    image: mysql:latest
+    container_name: iot-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: iot_monitoring
+      MYSQL_USER: nodered
+      MYSQL_PASSWORD: Nodered@123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - iot_network
+
+  # Node-RED (Flow Orchestrator & Pipeline)
+  nodered:
+    image: nodered/node-red:latest
+    container_name: mynodered
+    restart: always
+    ports:
+      - "1880:1880"
+    volumes:
+      - nodered_data:/data
+    depends_on:
+      - emqx
+      - iot-mysql
+    networks:
+      - iot_network
+
+volumes:
+  mysql_data:
+  nodered_data:
+
+networks:
+  iot_network:
+    driver: bridge
